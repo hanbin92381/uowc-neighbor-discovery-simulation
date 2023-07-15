@@ -8,6 +8,7 @@ def visualize_network(nodes, fig):
     colors = {
         3: 'blue',
         5: 'green',
+        6: 'grey',
         7: 'red',
         11: 'purple',
         13: 'pink',
@@ -27,6 +28,9 @@ def visualize_network(nodes, fig):
 
     # 绘制通信范围圆圈和分割线
     for node in nodes:
+        # 获取划分个数
+        n = node.get_divide_num()
+        
         # 在节点位置绘制红色原点
         plt.plot(node.x, node.y, 'ro')
         
@@ -35,17 +39,19 @@ def visualize_network(nodes, fig):
         plt.gca().add_patch(circle)
 
         # 绘制分割线
-        for i in range(node.p):
-            angle = (i * (360 / node.p) + node.angle_offset) % 360
-            line_x = [node.x, node.x + node.radius * np.sin(np.deg2rad(angle))]
-            line_y = [node.y, node.y + node.radius * np.cos(np.deg2rad(angle))]
-            plt.plot(line_x, line_y, linewidth=1, color='gray', linestyle='dashed', alpha=0.5)
+        if n > 0:
+            for i in range(n):
+                angle = (i * (360 / n) + node.angle_offset) % 360
+                line_x = [node.x, node.x + node.radius * np.sin(np.deg2rad(angle))]
+                line_y = [node.y, node.y + node.radius * np.cos(np.deg2rad(angle))]
+                plt.plot(line_x, line_y, linewidth=1, color='gray', linestyle='dashed', alpha=0.5)
 
         # 突出显示当前朝向所在的分区
-        start_angle = 90 - node.orientation + (360 / (2 * node.p))
-        end_angle = 90 - node.orientation - (360 / (2 * node.p))
+        if n == 0: n = 360 / node.cover
+        start_angle = 90 - node.orientation + (360 / (2 * n))
+        end_angle = 90 - node.orientation - (360 / (2 * n))
         # 在 Wedge 函数中，角度参数是相对于正x轴方向的逆时针方向来定义的，而不是相对于正北方向
-        wedge = Wedge((node.x, node.y), node.radius, end_angle, start_angle, facecolor=colors[node.p], alpha=0.3)
+        wedge = Wedge((node.x, node.y), node.radius, end_angle, start_angle, facecolor=colors[n], alpha=0.3)
         plt.gca().add_patch(wedge)
 
     # 绘制节点位置和朝向
