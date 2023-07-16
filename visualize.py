@@ -5,16 +5,7 @@ from matplotlib.patches import Circle, Wedge
 
 def visualize_network(nodes, fig):
     # 不同质数对应不同颜色
-    colors = {
-        3: 'blue',
-        5: 'green',
-        6: 'grey',
-        7: 'red',
-        11: 'purple',
-        13: 'pink',
-        17: 'cyan',
-        19: 'orange'
-    }
+    colors = ['blue', 'green', 'grey', 'red', 'purple', 'pink', 'cyan', 'orange']
     
     # 获取当前图像对象
     ax = fig.gca()
@@ -51,7 +42,7 @@ def visualize_network(nodes, fig):
         start_angle = 90 - node.orientation + (360 / (2 * n))
         end_angle = 90 - node.orientation - (360 / (2 * n))
         # 在 Wedge 函数中，角度参数是相对于正x轴方向的逆时针方向来定义的，而不是相对于正北方向
-        wedge = Wedge((node.x, node.y), node.radius, end_angle, start_angle, facecolor=colors[n], alpha=0.3)
+        wedge = Wedge((node.x, node.y), node.radius, end_angle, start_angle, facecolor=colors[int(3 * n) % len(colors)], alpha=0.3)
         plt.gca().add_patch(wedge)
 
     # 绘制节点位置和朝向

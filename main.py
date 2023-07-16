@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from Node import OurNode, HDNDNode, RandomNode, MLENode
 import utils
 from visualize import visualize_network
+from typing import List
 
 
 def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_offset=False, time_offset=False):
@@ -23,13 +24,12 @@ def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_of
     coordinates = utils.generate_coordinates(num, radius, scope)
     #coordinates = utils.read_coordinates(str(num) + '.txt')
 
-    if len(P) < num:
-        P = P * (num // len(P)) + P[:num % len(P)]
+    extend_P = P * (num // len(P)) + P[:num % len(P)] if len(P) < num else P
         
     for i, (x, y) in enumerate(coordinates):
         offset1 = random.randrange(0, 91, 10) if angle_offset else 0
         offset2 = random.randrange(0, 10) if time_offset else 0
-        node = OurNode(x, y, scope, radius, cover, offset1, offset2, P[i])
+        node = OurNode(x, y, scope, radius, cover, offset1, offset2, extend_P[i], P)
         nodes.append(node)
 
     return nodes
@@ -43,7 +43,9 @@ def create_hdndnodes(num=10, p=3, q=5, scope=3, radius=15, cover=120, angle_offs
     ids = utils.generate_ids(num, 6)
 
     for (x, y), id in zip(coordinates, ids):
-        node = HDNDNode(x, y, scope, radius, cover, angle_offset, time_offset, p, q, id)
+        offset1 = random.randrange(0, 91, 10) if angle_offset else 0
+        offset2 = random.randrange(0, 10) if time_offset else 0
+        node = HDNDNode(x, y, scope, radius, cover, offset1, offset2, p, q, id)
         nodes.append(node)
 
     return nodes
@@ -69,24 +71,29 @@ def create_mlenodes(num=10, scope=3, radius=15, cover=120, angle_offset=False, t
     coordinates = utils.read_coordinates(str(num) + '.txt')
     
     for x, y in coordinates:
-        node = MLENode(x, y, scope, radius, cover, angle_offset, time_offset)
+        offset1 = random.randrange(0, 91, 10) if angle_offset else 0
+        offset2 = random.randrange(0, 10) if time_offset else 0
+        node = MLENode(x, y, scope, radius, cover, offset1, offset2)
         nodes.append(node)
 
     return nodes
 
 
-def count(nodes):
-    print('Start counting...')
+def count(cur_time, nodes, complete_nodes):
     rates = []
     for i, node in enumerate(nodes):
-        total_num = len(node.potential_neighbors)
-        discovered_num = len(node.discovered_neighbors)
-        rate = discovered_num / total_num if total_num > 0 else 1
-        print(f'[Node {i}] discover neighbors: {discovered_num}/{total_num}\t'
-              f'rate: {rate:.2f}')
+        total, cnt = node.count_neighbors()
+        rate = cnt / total if total > 0 else 1
+        if rate >= 0.99 and node not in complete_nodes:
+            print(f'Time:  {cur_time}\t Node {i} completes!\t'
+                  f'Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
+            # print(node.get_divide_num())
+            complete_nodes.add(node)
+
         rates.append(rate)
 
-    print(f'Average discovering rate: {sum(rates) / len(rates)}')
+    avg_rate = sum(rates) / len(rates)
+    return avg_rate
 
 
 def main(args):
@@ -101,12 +108,13 @@ def main(args):
     cover = args.cover
     
     # 随机数分布
-    P, gamma = utils.generate_p(num_nodes, cover, 0.95)
-    total_time = P[-1] * P[-2]   # 应该根据质数分布计算
+    P: List[int] = utils.generate_p(num_nodes, cover, 1)
+    total_time = (2 * P[-1] * P[-2]) ** 2    # 根据质数分布计算
     # P = [6, 7]
 
     # 节点生成
     nodes = []
+    complete_nodes = set()
     if exp == 'our':
         nodes = create_ournodes(num_nodes, P, scope, radius, cover, angle_offset, time_offset)
     elif exp == 'hdnd':
@@ -124,7 +132,9 @@ def main(args):
     fig = plt.figure(figsize=(10, 10))
 
     # 程序主体循环
-    for i in range(total_time * gamma):
+    print(f'P: {P}')
+    print(f'Total time: {total_time}')
+    for i in range(total_time):
         # 可视化
         visualize_network(nodes, fig)
         
@@ -134,25 +144,26 @@ def main(args):
 
         # 更新节点朝向
         for node in nodes:
-            node.update_orientation(i)
+            node.update_orientation_status(i)
 
-        # 重新分配p
-        if exp == 'our' and i and i % total_time == 0:
-            # print('reassign P')
-            for node in nodes:
-                node.p = random.choice(P)
+        # 统计邻居发现结果
+        rate = count(i, nodes, complete_nodes)
+        if rate >= 1:
+            print(f'Discovering completed! Total time: {i}')
+            break
             
         # 休眠一段时间
         time.sleep(interval)
-    
-    # 统计邻居发现结果
-    count(nodes)
 
-    # cal_time
+    rate = count(total_time, nodes, complete_nodes)
+    print(f'Time out! Rate: {rate}')
+    print('Uncomplete nodes:')
+    for i, node in enumerate(nodes):
+        if node not in complete_nodes:
+            total, cnt = node.count_neighbors()
+            rate = cnt / total if total > 0 else 1
+            print(f'Node: {i}\t Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
 
-    # 根据节点分布情况换用更合适的P
-    # TODO
-    
 
 if __name__ == "__main__":
     args = utils.get_args()

@@ -1,10 +1,12 @@
 from os import truncate
 import numpy as np
 import random
-
+import math
 
 class Node:
     def __init__(self, x, y, scope, radius, cover, angle_offset, time_offset):
+        self.origin_x = x   # 节点x轴圆心
+        self.origin_y = y   # 节点y轴圆心
         self.x = x   # 节点x轴坐标
         self.y = y   # 节点y轴坐标
         self.scope = scope   # 节点漂浮范围半径
@@ -24,6 +26,14 @@ class Node:
                 distance = np.sqrt((self.x - node.x) ** 2 + (self.y - node.y) ** 2)
                 if distance + self.scope * 2 <= self.radius:
                     self.potential_neighbors.append(node)
+
+
+    def shift(self):
+        x = random.uniform(self.origin_x - self.scope, self.origin_x + self.scope)
+        y_range = math.sqrt(self.scope ** 2 - (x - self.origin_x) ** 2)
+        y = random.uniform(self.origin_y - y_range, self.origin_y + y_range)
+        self.x = x
+        self.y = y
 
 
     def calculate_angle(self, node):
@@ -71,7 +81,7 @@ class Node:
     def count_neighbors(self):
         total = len(self.potential_neighbors)
         count = sum(1 for v in self.discovered_neighbors.values() if v >= 2)
-        return count / total
+        return total, count
 
     
     def get_divide_num(self):
@@ -100,30 +110,38 @@ class OurNode(Node):
 
 
     def change_status(self, cur_time):
-        self.status = 1 if cur_time % self.p == 0 else 0
+        return
+        # self.status = 1 if cur_time % self.p == 0 else 0
     
     
     def update_orientation_status(self, cur_time):
         if cur_time < self.time_offset:
             return
 
+        self.shift()
         # 2pq的值
-        pq = 2 * self.P[-1] * self.P[-2]
+        # pq = 2 * self.P[-1] * self.P[-2]
         # 更新节点朝向
-        if cur_time > 0 and cur_time % pq == 0:
-            self.orientation = (self.orientation + self.angle_increment) % 360
+        #if cur_time > 0 and (cur_time - self.time_offset) % pq == 0:
+        self.orientation = (self.orientation + self.angle_increment) % 360
         # 更新节点收发
-        self.change_status(cur_time)
-        # 经过(2pq)^2后重新分配p
-        if cur_time > 0 and cur_time % (pq ** 2) == 0:
-            self.reallocate_p()
+        # self.change_status(cur_time)
+        
 
-            
-    def reallocate_p(self):
-        p = random.choice(self.P)
-        self.p = p
-        self.orientation = ((180.0 / p) + self.angle_offset) % 360
-        self.angle_increment = 360.0 / p
+    def check_neighbors(self, cur_time):
+        if cur_time < self.time_offset:
+            return
+
+        neighbors = []
+        for neighbor in self.potential_neighbors:
+            if self.check_neighbor_orientation(neighbor):
+                neighbors.append(neighbor)
+
+        for nei in neighbors:
+            if nei not in self.discovered_neighbors:
+                self.discovered_neighbors[nei] = 0
+
+            self.discovered_neighbors[nei] += 1
         
 
 class HDNDNode(Node):
@@ -132,9 +150,10 @@ class HDNDNode(Node):
         self.p = p   # 接收状态的角速度
         self.q = q   # 发送状态的角速度
         self.s = id + '0' * (len(id) // 2 + 1) + '1' * ((len(id) + 1) // 2)   # 01状态序列
+        self.status = int(id[0])
         self.count = 1   # 转动次数统计
         self.index = 0   # 状态序列下标
-        self.orientation = (180.0 / p) % 360 if id[0] == '0' else (180.0 / q) % 360   # 初始朝向
+        self.orientation = ((180.0 / p if self.status == 0 else 180.0 / q) + self.angle_offset) % 360   # 初始朝向
 
 
     def get_divide_num(self):        
@@ -147,15 +166,16 @@ class HDNDNode(Node):
 
 
     def update_orientation_status(self, cur_time):
-        if  cur_time < self.time_offset:
+        if cur_time < self.time_offset:
             return
-        
+
+        self.shift()
         n = self.get_divide_num()
         self.count += 1
         if self.count == 2 * n + 1:
             self.change_status(cur_time)
             n = self.get_divide_num()
-            self.orientation = (180.0 / n) % 360
+            self.orientation = (180.0 / n + self.angle_offset) % 360
             self.count = 1
         else:
             increment = 360.0 / n
@@ -180,6 +200,7 @@ class RandomNode(Node):
         if cur_time < self.time_offset:
             return
 
+        self.shift()
         self.orientation = random.randint(0, 360)
         self.change_status(cur_time)
                             
@@ -188,9 +209,9 @@ class MLENode(Node):
     def __init__(self, x, y, scope, radius, cover, angle_offset, time_offset):
         super().__init__(x, y, scope, radius, cover, angle_offset, time_offset)
         self.p = int(360.0 / cover)   # 扇区划分
-        self.orientation = cover / 2   # 初始朝向
+        self.orientation = (cover / 2 + self.angle_offset) % 360   # 初始朝向
         self.angle_increment = cover   # 角度增量
-        self.weights = {i: 10.0 for i in range(self.p)}   # 选择各扇区的概率权重
+        self.weights = {i: -1.0 for i in range(self.p)}   # 选择各扇区的概率权重
 
 
     def get_divide_num(self):
@@ -202,17 +223,18 @@ class MLENode(Node):
         self.status = 1 if random.randint(0, 100) > 10 else 0
 
 
-    def update_orientation(self, cur_time):
+    def update_orientation_status(self, cur_time):
         if cur_time < self.time_offset:
             return
 
+        self.shift()
         # 根据weights概率选择节点朝向
         keys = list(self.weights.keys())
         values = [value / sum(self.weights.values()) for value in self.weights.values()]
         selected_key = random.choices(keys, weights=values, k=1)[0]
         #print(self.weights)
         #print(selected_key)
-        self.orientation = self.cover / 2 + (self.cover * selected_key)
+        self.orientation = (self.cover / 2 + (self.cover * selected_key) + self.angle_offset) % 360
         # 更新节点收发
         self.change_status(cur_time)
 
@@ -230,7 +252,7 @@ class MLENode(Node):
 
         if len(neighbors) == 0:
             # 如果此时此扇区未发现邻居 则该扇区权重-1
-            self.weights[(self.orientation - self.cover/ 2) / self.cover] -= 1
+            self.weights[((self.orientation - self.angle_offset + 360) % 360 - self.cover/ 2) / self.cover] -= 1
             
         if len(neighbors) == 1:
             if neighbors[0] not in self.discovered_neighbors:
@@ -238,7 +260,7 @@ class MLENode(Node):
 
             self.discovered_neighbors[neighbors[0]] += 1
             # 如果此时此扇区成功发现邻居 则该扇区权重+1
-            self.weights[(self.orientation - self.cover/ 2) / self.cover] += 1
+            self.weights[((self.orientation - self.angle_offset + 360) % 360 -  self.cover/ 2) / self.cover] += 1
 
 
 if __name__ == "__main__":

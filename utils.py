@@ -1,5 +1,6 @@
 import argparse
 import random
+import math
 
 
 def get_args():
@@ -9,17 +10,17 @@ def get_args():
     argparser.add_argument('--num', type=int,
                            help='number of nodes', default=10)
     argparser.add_argument('--inter', type=float,
-                           help='rotation interval', default=3)
+                           help='visualize interval', default=0)
     argparser.add_argument('--angle_offset', type=bool,
                            help='offset of north angle', default=False)
     argparser.add_argument('--time_offset', type=bool,
                            help='offset of start time', default=False)
     argparser.add_argument('--scope', type=int,
-                           help='movement scope radius', default=3)
+                           help='movement scope radius', default=5)
     argparser.add_argument('--radius', type=int,
-                           help='communication radius', default=15)
+                           help='communication radius', default=20)
     argparser.add_argument('--cover', type=int,
-                           help='coverage angle of transceiver', default=60)
+                           help='coverage angle of transceiver', default=120)
     args = argparser.parse_args()
     return args
 
@@ -32,7 +33,7 @@ def generate_coordinates(num, radius, scope):
         y = random.uniform(0, 100)
         for coord in coordinates:
             distance = ((x - coord[0]) ** 2 + (y - coord[1]) ** 2) ** 0.5
-            if distance + scope * 2 <= radius:
+            if distance + scope * 2 < radius:
                 coordinates.append((x, y))
                 break
 
@@ -65,16 +66,16 @@ def get_primes():
     线性筛求100以内的质数
     '''
     primes = []  # 存储所有素数
-    st = [False] * 100  # 标记数是否被筛掉
+    st = [False] * 200  # 标记数是否被筛掉
     cnt = 0  # 素数个数
     
-    for i in range(2, 100):
+    for i in range(2, 200):
         if not st[i]:
             primes.append(i)
             cnt += 1
 
         for p in primes:
-            if p * i >= 100:
+            if p * i >= 200:
                 break
 
             st[p * i] = True
@@ -93,29 +94,47 @@ def generate_p(num, cover, threshold):
     # print(primes)
 
     if threshold == 1:
-        return primes, 2
+        return primes
 
-    gamma = 2
     w = 0
     idx = 1   # 左右分割primes为P和Q两部分的下标
     while w < threshold:
         # print(f'idx-{idx} w-{w} lambda-{gamma}')
-        if idx + 1 >= num or (idx + 1 < num and (1 - 1 / (idx + 1) ** gamma) >= threshold):
+        if idx + 1 >= num or (idx + 1 < num and (1 - 1 / (idx + 1)) >= threshold):
             break
         
-        temp = gamma
-        # while (1 - 1 / (idx + 1) ** temp) <= threshold:
-        temp += 1
         idx += 1
-        if temp > primes[idx]: idx += 1
-        else: gamma = temp
-        w = 1 - 1 / (idx + 1) ** gamma
+        w = 1 - 1 / (idx + 1)
 
-    print(primes[:idx + 1], gamma)
-    return primes[:idx + 1], gamma
+    return primes[:idx + 1]
 
+
+def reallocate_p(nodes):
+    # 遍历一遍nodes 生成全局拓扑图
+
+    # 生成node下标-度数的map 按照度数从高到低排序
+
+    # 生成node下标-是否分配的map
+
+    # 从
+    pass
 
 if __name__ == "__main__":
-    primes, gamma = generate_p(10, 60, 0.9)
+    primes = generate_p(40, 60, 0.9)
     print(primes)
-    print(gamma)
+
+    '''
+    def generate_random_coordinate(center_x, center_y, radius):
+        x = random.uniform(center_x - radius, center_x + radius)
+        y_range = math.sqrt(radius**2 - (x - center_x)**2)
+        y = random.uniform(center_y - y_range, center_y + y_range)
+        return x, y
+
+    
+    x = 0
+    y = 0
+    r = 10
+    for _ in range(10):
+        a, b = generate_random_coordinate(x, y, r)
+        print(a, b)
+    '''
