@@ -63,19 +63,19 @@ def generate_ids(num, n):
 
 def get_primes():
     '''
-    线性筛求100以内的质数
+    线性筛求300以内的质数
     '''
     primes = []  # 存储所有素数
-    st = [False] * 200  # 标记数是否被筛掉
+    st = [False] * 300  # 标记数是否被筛掉
     cnt = 0  # 素数个数
     
-    for i in range(2, 200):
+    for i in range(2, 300):
         if not st[i]:
             primes.append(i)
             cnt += 1
 
         for p in primes:
-            if p * i >= 200:
+            if p * i >= 300:
                 break
 
             st[p * i] = True
@@ -120,21 +120,9 @@ def reallocate_p(nodes):
     pass
 
 if __name__ == "__main__":
-    primes = generate_p(40, 60, 0.9)
-    print(primes)
+    #primes = generate_p(40, 60, 0.9)
+    #print(primes)
 
-    '''
-    def generate_random_coordinate(center_x, center_y, radius):
-        x = random.uniform(center_x - radius, center_x + radius)
-        y_range = math.sqrt(radius**2 - (x - center_x)**2)
-        y = random.uniform(center_y - y_range, center_y + y_range)
-        return x, y
-
-    
-    x = 0
-    y = 0
-    r = 10
-    for _ in range(10):
-        a, b = generate_random_coordinate(x, y, r)
-        print(a, b)
-    '''
+    l = ['n1', 'n2', 'n3', '总时间', '平均', 'n4', 'n5', 'n7']
+    l.sort()
+    print(l)

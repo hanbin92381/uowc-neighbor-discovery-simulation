@@ -119,10 +119,7 @@ class OurNode(Node):
             return
 
         self.shift()
-        # 2pq的值
-        # pq = 2 * self.P[-1] * self.P[-2]
         # 更新节点朝向
-        #if cur_time > 0 and (cur_time - self.time_offset) % pq == 0:
         self.orientation = (self.orientation + self.angle_increment) % 360
         # 更新节点收发
         # self.change_status(cur_time)
@@ -249,18 +246,15 @@ class MLENode(Node):
                 self.check_neighbor_status(neighbor) and
                 self.check_neighbor_orientation(neighbor)):
                 neighbors.append(neighbor)
-
-        if len(neighbors) == 0:
-            # 如果此时此扇区未发现邻居 则该扇区权重-1
-            self.weights[((self.orientation - self.angle_offset + 360) % 360 - self.cover/ 2) / self.cover] -= 1
             
         if len(neighbors) == 1:
             if neighbors[0] not in self.discovered_neighbors:
                 self.discovered_neighbors[neighbors[0]] = 0
 
             self.discovered_neighbors[neighbors[0]] += 1
-            # 如果此时此扇区成功发现邻居 则该扇区权重+1
-            self.weights[((self.orientation - self.angle_offset + 360) % 360 -  self.cover/ 2) / self.cover] += 1
+
+        # 如果此时此扇区发现邻居 则该扇区权重+1 反之-1
+        self.weights[((self.orientation - self.angle_offset + 360) % 360 - self.cover/ 2) / self.cover] += 1 if len(neighbors) > 0 else -1
 
 
 if __name__ == "__main__":
