@@ -1,4 +1,4 @@
-from os import truncate
+from os import truncate, wait
 import numpy as np
 import random
 import math
@@ -146,43 +146,71 @@ class HDNDNode(Node):
         super().__init__(x, y, scope, radius, cover, angle_offset, time_offset)
         self.p = p   # 接收状态的角速度
         self.q = q   # 发送状态的角速度
-        self.s = id + '0' * (len(id) // 2 + 1) + '1' * ((len(id) + 1) // 2)   # 01状态序列
-        self.status = int(id[0])
+        self.s = id #+ '0' * (len(id) // 2 + 1) + '1' * ((len(id) + 1) // 2)   # 01状态序列
+        self.status = 1
         self.count = 1   # 转动次数统计
         self.index = 0   # 状态序列下标
         self.orientation = ((180.0 / p if self.status == 0 else 180.0 / q) + self.angle_offset) % 360   # 初始朝向
 
 
-    def get_divide_num(self):        
-        return self.p if self.status == 0  else self.q
+    def get_divide_num(self):
+        return self.p if self.s[self.index] == '0' else self.q
     
 
     def change_status(self, cur_time):
-        self.index = (self.index + 1) % len(self.s)
-        self.status = int(self.s[self.index]) - 0
-
+        if self.s[self.index] == '1':
+            self.status = (cur_time + self.time_offset)  % 2
+        else:
+            self.status = 0
+        
 
     def update_orientation_status(self, cur_time):
         if cur_time < self.time_offset:
             return
 
         self.shift()
+        self.change_status(cur_time)
         n = self.get_divide_num()
         self.count += 1
         if self.count == 2 * n + 1:
-            self.change_status(cur_time)
+            self.index = (self.index + 1) % len(self.s)
             n = self.get_divide_num()
             self.orientation = (180.0 / n + self.angle_offset) % 360
             self.count = 1
         else:
             increment = 360.0 / n
             self.orientation = (self.orientation + increment) % 360        
+
         
+    def check_neighbors(self, cur_time):
+        if cur_time < self.time_offset:
+            return
+
+        neighbors = []
+        for neighbor in self.potential_neighbors:
+            if (self.check_neighbor_conflict(neighbors) and
+                self.check_neighbor_status(neighbor) and
+                self.check_neighbor_orientation(neighbor)):
+                neighbors.append(neighbor)
+
+        if len(neighbors) == 1:
+            neighbor = neighbors[0]
+            if neighbors[0] not in self.discovered_neighbors:
+                self.discovered_neighbors[neighbors[0]] = 0
+
+            self.discovered_neighbors[neighbors[0]] += 1
+
+            if self not in neighbor.discovered_neighbors:
+                neighbor.discovered_neighbors[self] = 0
+
+            neighbor.discovered_neighbors[self] += 1
+
 
 class RandomNode(Node):
     def __init__(self, x, y, scope, radius, cover, angle_offset, time_offset):
         super().__init__(x, y, scope, radius, cover, angle_offset, time_offset)
         self.orientation = random.randint(0, 360)
+        self.wait_time = 0
 
         
     def get_divide_num(self):
@@ -190,17 +218,23 @@ class RandomNode(Node):
 
 
     def change_status(self, cur_time):
-        # 90%几率为发送状态
-        self.status = 1 if random.randint(0, 100) > 10 else 0
-    
+        # 2%几率为发送状态
+        self.status = 1 if random.randint(0, 100) > 5 else 0
+
+        
     def update_orientation_status(self, cur_time):
         if cur_time < self.time_offset:
             return
 
         self.shift()
-        self.orientation = random.randint(0, 360)
-        self.change_status(cur_time)
-                            
+        if self.wait_time == 0:
+            target = random.randint(0, 360)
+            self.orientation = random.randint(0, 360)
+            self.change_status(cur_time)
+            self.wait_time = abs(self.orientation - target) // self.cover
+        else:
+            self.wait_time -= 1
+         
 
 class MLENode(Node):
     def __init__(self, x, y, scope, radius, cover, angle_offset, time_offset):
@@ -208,7 +242,7 @@ class MLENode(Node):
         self.p = int(360.0 / cover)   # 扇区划分
         self.orientation = (cover / 2 + self.angle_offset) % 360   # 初始朝向
         self.angle_increment = cover   # 角度增量
-        self.weights = {i: -1.0 for i in range(self.p)}   # 选择各扇区的概率权重
+        self.weights = {i: -10 for i in range(self.p)}   # 选择各扇区的概率权重
 
 
     def get_divide_num(self):
@@ -216,8 +250,8 @@ class MLENode(Node):
 
 
     def change_status(self, cur_time):
-        # 90%几率为发送状态
-        self.status = 1 if random.randint(0, 100) > 10 else 0
+        # 10%几率为发送状态
+        self.status = 1 if random.randint(0, 100) > 90 else 0
 
 
     def update_orientation_status(self, cur_time):
@@ -225,15 +259,16 @@ class MLENode(Node):
             return
 
         self.shift()
-        # 根据weights概率选择节点朝向
-        keys = list(self.weights.keys())
-        values = [value / sum(self.weights.values()) for value in self.weights.values()]
-        selected_key = random.choices(keys, weights=values, k=1)[0]
-        #print(self.weights)
-        #print(selected_key)
-        self.orientation = (self.cover / 2 + (self.cover * selected_key) + self.angle_offset) % 360
-        # 更新节点收发
-        self.change_status(cur_time)
+        if cur_time % 2:
+            # 根据weights概率选择节点朝向
+            keys = list(self.weights.keys())
+            values = [value / sum(self.weights.values()) for value in self.weights.values()]
+            selected_key = random.choices(keys, weights=values, k=1)[0]
+            #print(self.weights)
+            #print(selected_key)
+            self.orientation = (self.cover / 2 + (self.cover * selected_key) + self.angle_offset) % 360
+            # 更新节点收发
+            self.change_status(cur_time)
 
 
     def check_neighbors(self, cur_time):

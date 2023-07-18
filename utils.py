@@ -50,14 +50,18 @@ def read_coordinates(filename):
         for line in file:
             x, y = line.strip().split(',')
             coordinates.append((float(x), float(y)))
+            
     return coordinates
 
 
 def generate_ids(num, n):
+    sequence = [0] * n + [1] * n
     ids = set()
     while len(ids) < num:
-        id = ''.join(random.choice(['0', '1']) for _ in range(n))
-        ids.add(id)
+        id = random.sample(sequence, len(sequence))
+        str_id = ''.join(str(num) for num in id)
+        ids.add(str_id)
+        
     return list(ids)
 
 

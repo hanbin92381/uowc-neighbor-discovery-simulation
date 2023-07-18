@@ -50,7 +50,7 @@ def create_hdndnodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_o
     for (x, y), id in zip(coordinates, ids):
         offset1 = random.randrange(0, 91, 10) if angle_offset else 0
         offset2 = random.randrange(0, 10) if time_offset else 0
-        node = HDNDNode(x, y, scope, radius, cover, offset1, offset2, P[0], P[1], id)
+        node = HDNDNode(x, y, scope, radius, cover, offset1, offset2, P[0], P[2], id)
         nodes.append(node)
 
     return nodes
