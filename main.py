@@ -131,7 +131,7 @@ def main(args):
     
     # 随机数分布
     P: List[int] = utils.generate_p(num_nodes, cover, 1)
-    total_time = 2 * P[-1] * P[-2]    # 根据质数分布计算
+    total_time = max(2 * P[-1] * P[-2], int(1e5))    # 根据质数分布计算
     # P = [6, 7]
 
     # 节点生成
