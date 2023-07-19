@@ -14,7 +14,7 @@ from typing import List
 data = []   # 存放实验数据
 
 
-def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_offset=False, time_offset=False):
+def create_ournodes(num=10, P=[3, 5, 7], flag=False, scope=3, radius=15, cover=120, angle_offset=False, time_offset=False):
     '''
     随机生成num个OurNode：
     1. 节点坐标随机，但保证无孤立节点
@@ -26,8 +26,10 @@ def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_of
     '''
     nodes = []
 
-    coordinates = utils.generate_coordinates(num, radius, scope)
-    #coordinates = utils.read_coordinates(str(num) + '.txt')
+    if flag == False:
+        coordinates = utils.generate_coordinates(num, radius, scope)
+    else:
+        coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
 
     extend_P = P * (num // len(P)) + P[:num % len(P)] if len(P) < num else P
         
@@ -84,6 +86,10 @@ def create_mlenodes(num=10, scope=3, radius=15, cover=120, angle_offset=False, t
     return nodes
 
 
+def update_row(data, row_id, new_data):
+    return [new_data if row[0] == row_id else row for row in data]
+
+
 def count(cur_time, nodes, complete_nodes):
     rates = []
     for i, node in enumerate(nodes):
@@ -118,6 +124,7 @@ def output_data(file_name):
         writer = csv.writer(f)
         writer.writerows(data)
 
+
 def main(args):
     # 参数获取
     exp = args.exp
@@ -132,33 +139,42 @@ def main(args):
     # 随机数分布
     P: List[int] = utils.generate_p(num_nodes, cover, 1)
     total_time = max(2 * P[-1] * P[-2], int(1e5))    # 根据质数分布计算
-    # P = [6, 7]
+    #P = [17, 13, 17]
 
     # 节点生成
     nodes = []
     complete_nodes = set()
-    if exp == 'our':
-        nodes = create_ournodes(num_nodes, P, scope, radius, cover, angle_offset, time_offset)
+    if exp == 'our' or exp == 'period':
+        flag = False if exp == 'our' else True
+        flag = True
+        nodes = create_ournodes(num_nodes, P, flag, scope, radius, cover, angle_offset, time_offset)
     elif exp == 'hdnd':
         nodes = create_hdndnodes(num_nodes, P, scope, radius, cover, angle_offset, time_offset)
     elif exp == 'random':
         nodes = create_randomnodes(num_nodes, scope, radius, cover, angle_offset, time_offset)
     elif exp == 'mle':
         nodes = create_mlenodes(num_nodes, scope, radius, cover, angle_offset, time_offset)
-    
+        
     # 邻居初始化
     for node in nodes:
         node.find_neighbors(nodes)
+
+    if exp == 'period':
+        utils.reallocate_p(nodes, P)
 
     # 画布初始化
     fig = plt.figure(figsize=(10, 10))
 
     # 程序主体循环
-    print(f'P: {P}')
     print(f'Total time: {total_time}')
+    print(f'P: {P}')
+    for node in nodes:
+        print(f'{node.p} {type(node.p)}', end='')
+    
+    end_time = total_time
     for i in range(total_time):
         # 可视化
-        # visualize_network(nodes, fig)
+        #visualize_network(nodes, fig)
         
         # 判断邻居关系
         for node in nodes:
@@ -169,15 +185,16 @@ def main(args):
             node.update_orientation_status(i)
 
         # 统计邻居发现结果
-        rate = count(i, nodes, complete_nodes)
-        if rate >= 1:
+        _ = count(i, nodes, complete_nodes)
+        if len(complete_nodes) == num_nodes:
+            end_time = i
             print(f'Discovering completed! Total time: {i}')
             break
             
         # 休眠一段时间
         time.sleep(interval)
 
-    rate = count(total_time, nodes, complete_nodes)
+    rate = count(end_time, nodes, complete_nodes)
     print(f'Time out! Rate: {rate}')
     print('Uncomplete nodes:')
     for i, node in enumerate(nodes):
@@ -185,7 +202,7 @@ def main(args):
             total, cnt = node.count_neighbors()
             rate = cnt / total if total > 0 else 1
             print(f'Node: {i}\t Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
-            data.append([i + 1, total, cnt, rate, total_time])
+            data.append([i + 1, total, cnt, rate, end_time])
             
     output_data(f'results/{num_nodes}_{exp}.csv')
           

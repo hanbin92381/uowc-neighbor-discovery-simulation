@@ -5,7 +5,7 @@ import math
 
 def get_args():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('--exp', type=str, choices=['our', 'hdnd', 'random', 'mle'],
+    argparser.add_argument('--exp', type=str, choices=['our', 'hdnd', 'random', 'mle', 'period'],
                            help='node type', default='our')
     argparser.add_argument('--num', type=int,
                            help='number of nodes', default=10)
@@ -113,15 +113,30 @@ def generate_p(num, cover, threshold):
     return primes[:idx + 1]
 
 
-def reallocate_p(nodes):
-    # 遍历一遍nodes 生成全局拓扑图
+def reallocate_p(nodes, primes):
+    sorted_nodes = sorted(nodes, key=lambda node: len(node.potential_neighbors), reverse=True)
+    assigned_primes = {}
 
-    # 生成node下标-度数的map 按照度数从高到低排序
+    for node in sorted_nodes:
+        assigned_prime = None
+        for prime in primes:
+            if all(prime != assigned_primes.get(neighbor, None) for neighbor in node.potential_neighbors):
+                assigned_prime = prime
+                break
 
-    # 生成node下标-是否分配的map
+        node.p = assigned_prime
+        assigned_primes[node] = assigned_prime
 
-    # 从
-    pass
+    for node in nodes:
+        temp = f'P={node.p} :'
+        node.orientation = ((180.0 / node.p) + node.angle_offset) % 360
+        for nei in node.potential_neighbors:
+            temp += f' {nei.p}'
+
+        print(temp)
+    
+    #return nodes
+
 
 if __name__ == "__main__":
     #primes = generate_p(40, 60, 0.9)

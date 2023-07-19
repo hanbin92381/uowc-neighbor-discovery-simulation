@@ -101,7 +101,6 @@ class OurNode(Node):
         self.p = p   # 划分质数
         self.P = P   # 质数分布
         self.orientation = ((180.0 / p) + self.angle_offset) % 360   # 初始朝向
-        self.angle_increment = 360.0 / p   # 角度增量
 
 
     def get_divide_num(self):
@@ -119,7 +118,7 @@ class OurNode(Node):
 
         self.shift()
         # 更新节点朝向
-        self.orientation = (self.orientation + self.angle_increment) % 360
+        self.orientation = (self.orientation + 360.0 / self.p) % 360
         # 更新节点收发
         # self.change_status(cur_time)
         

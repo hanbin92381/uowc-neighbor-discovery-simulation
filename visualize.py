@@ -32,7 +32,7 @@ def visualize_network(nodes, fig):
         # 绘制分割线
         if n > 0:
             for i in range(n):
-                angle = (i * (360 / n) + node.angle_offset) % 360
+                angle = (i * (360.0 / n) + node.angle_offset) % 360
                 line_x = [node.x, node.x + node.radius * np.sin(np.deg2rad(angle))]
                 line_y = [node.y, node.y + node.radius * np.cos(np.deg2rad(angle))]
                 plt.plot(line_x, line_y, linewidth=1, color='gray', linestyle='dashed', alpha=0.5)
