@@ -44,6 +44,27 @@ def generate_coordinates(num, radius, scope):
     return coordinates
 
 
+def generate_continuous_coordinates(radius, scope):
+    coordinates = []
+    coordinates.append((random.uniform(0, 100), random.uniform(0, 100)))  # 添加第一个坐标
+    nums = [10, 20, 30, 40, 50]
+    for num in nums:
+        while len(coordinates) < num:
+            x = random.uniform(0, 100)
+            y = random.uniform(0, 100)
+            for coord in coordinates:
+                distance = ((x - coord[0]) ** 2 + (y - coord[1]) ** 2) ** 0.5
+                if distance + scope * 2 < radius:
+                    coordinates.append((x, y))
+                    break
+
+        with open(f'cont-{num}.txt', 'w') as file:
+            for coord in coordinates:
+                file.write(f'{coord[0]}, {coord[1]}\n')
+    
+    return coordinates
+
+
 def read_coordinates(filename):
     coordinates = []
     with open(filename, 'r') as file:

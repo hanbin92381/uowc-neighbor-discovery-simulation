@@ -1,9 +1,11 @@
 import math
+import os
 import time
 import random
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
+from datetime import datetime
 
 from Node import OurNode, HDNDNode, RandomNode, MLENode
 import utils
@@ -14,7 +16,7 @@ from typing import List
 data = []   # 存放实验数据
 
 
-def create_ournodes(num=10, P=[3, 5, 7], flag=False, scope=3, radius=15, cover=120, angle_offset=False, time_offset=False):
+def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_offset=False, time_offset=False):
     '''
     随机生成num个OurNode：
     1. 节点坐标随机，但保证无孤立节点
@@ -26,10 +28,9 @@ def create_ournodes(num=10, P=[3, 5, 7], flag=False, scope=3, radius=15, cover=1
     '''
     nodes = []
 
-    if flag == False:
-        coordinates = utils.generate_coordinates(num, radius, scope)
-    else:
-        coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    #coordinates = utils.generate_coordinates(num, radius, scope)
+    #coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
 
     extend_P = P * (num // len(P)) + P[:num % len(P)] if len(P) < num else P
         
@@ -46,7 +47,8 @@ def create_hdndnodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_o
     nodes = []
 
     #coordinates = utils.generate_coordinates(num, radius, scope)
-    coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    #coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
     ids = utils.generate_ids(num, 6)
 
     for (x, y), id in zip(coordinates, ids):
@@ -62,7 +64,8 @@ def create_randomnodes(num=10, scope=3, radius=15, cover=120, angle_offset=False
     nodes = []
 
     #coordinates = utils.generate_coordinates(num, radius, scope)
-    coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    #coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
     
     for x, y in coordinates:
         node = RandomNode(x, y, scope, radius, cover, angle_offset, time_offset)
@@ -75,7 +78,8 @@ def create_mlenodes(num=10, scope=3, radius=15, cover=120, angle_offset=False, t
     nodes = []
 
     #coordinates = utils.generate_coordinates(num, radius, scope)
-    coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    #coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
+    coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
     
     for x, y in coordinates:
         offset1 = random.randrange(0, 91, 10) if angle_offset else 0
@@ -96,10 +100,10 @@ def count(cur_time, nodes, complete_nodes):
         total, cnt = node.count_neighbors()
         rate = cnt / total if total > 0 else 1
         if rate >= 1 and node not in complete_nodes:
-            print(f'Time:  {cur_time}\t Node {i} completes!\t'
-                  f'Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
+            print(f'Time:  {cur_time}\t Node {i} completes!\t P: {node.p}\n'
+                  f'Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}\n')
             complete_nodes.add(node)
-            data.append([i + 1, total, cnt, rate, cur_time])
+            data.append([i + 1, total, cnt, rate, cur_time, node.p])
 
         rates.append(rate)
 
@@ -115,11 +119,18 @@ def output_data(file_name):
     sums = np.sum(data, axis=0).tolist()
     sums[0] = '总时间'
     sums[-1] = np.max([row[-1] for row in data])
-    sums[-2] = avg[-2]
+    sums[-2] = np.max([row[-2] for row in data])
+    sums[-3] = avg[-3]
     
     data.append(avg)
     data.append(sums)
 
+    # 获取当前时间 创建以当前时间命名的文件夹
+    #current_time = datetime.now()
+    #time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+    #folder_name = time_string
+    #os.makedirs(folder_name)
+    
     with open(file_name, 'w', newline="") as f:
         writer = csv.writer(f)
         writer.writerows(data)
@@ -141,13 +152,14 @@ def main(args):
     total_time = max(2 * P[-1] * P[-2], int(1e5))    # 根据质数分布计算
     #P = [17, 13, 17]
 
+    # 连续递进的节点坐标生成 执行一次即可
+    #utils.generate_continuous_coordinates(radius, scope)
+
     # 节点生成
     nodes = []
     complete_nodes = set()
     if exp == 'our' or exp == 'period':
-        flag = False if exp == 'our' else True
-        flag = True
-        nodes = create_ournodes(num_nodes, P, flag, scope, radius, cover, angle_offset, time_offset)
+        nodes = create_ournodes(num_nodes, P, scope, radius, cover, angle_offset, time_offset)
     elif exp == 'hdnd':
         nodes = create_hdndnodes(num_nodes, P, scope, radius, cover, angle_offset, time_offset)
     elif exp == 'random':
@@ -169,12 +181,13 @@ def main(args):
     print(f'Total time: {total_time}')
     print(f'P: {P}')
     for node in nodes:
-        print(f'{node.p} {type(node.p)}', end='')
+        print(f'{node.p} ', end='')
+    print()
     
     end_time = total_time
     for i in range(total_time):
         # 可视化
-        #visualize_network(nodes, fig)
+        # visualize_network(nodes, fig)
         
         # 判断邻居关系
         for node in nodes:
@@ -202,9 +215,9 @@ def main(args):
             total, cnt = node.count_neighbors()
             rate = cnt / total if total > 0 else 1
             print(f'Node: {i}\t Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
-            data.append([i + 1, total, cnt, rate, end_time])
+            data.append([i + 1, total, cnt, rate, end_time, node.p])
             
-    output_data(f'results/{num_nodes}_{exp}.csv')
+    output_data(f'results/temp/{num_nodes}_{exp}.csv')
           
 
 if __name__ == "__main__":

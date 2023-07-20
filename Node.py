@@ -207,6 +207,7 @@ class HDNDNode(Node):
 class RandomNode(Node):
     def __init__(self, x, y, scope, radius, cover, angle_offset, time_offset):
         super().__init__(x, y, scope, radius, cover, angle_offset, time_offset)
+        self.p = 0
         self.orientation = random.randint(0, 360)
         self.wait_time = 0
 
