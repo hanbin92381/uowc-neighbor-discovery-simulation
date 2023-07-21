@@ -15,12 +15,14 @@ def get_args():
                            help='offset of north angle', default=False)
     argparser.add_argument('--time_offset', type=bool,
                            help='offset of start time', default=False)
-    argparser.add_argument('--scope', type=int,
+    argparser.add_argument('--scope', type=float,
                            help='movement scope radius', default=5)
     argparser.add_argument('--radius', type=int,
                            help='communication radius', default=20)
     argparser.add_argument('--cover', type=int,
                            help='coverage angle of transceiver', default=120)
+    argparser.add_argument('--show', type=bool,
+                           help='show the graphic', default=False)
     args = argparser.parse_args()
     return args
 

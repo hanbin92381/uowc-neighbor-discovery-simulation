@@ -153,7 +153,7 @@ def main(args):
     #P = [17, 13, 17]
 
     # 连续递进的节点坐标生成 执行一次即可
-    # utils.generate_continuous_coordinates(radius, scope)
+    #utils.generate_continuous_coordinates(radius, scope)
 
     # 节点生成
     nodes = []
@@ -187,7 +187,8 @@ def main(args):
     end_time = total_time
     for i in range(total_time):
         # 可视化
-        # visualize_network(nodes, fig)
+        if args.show:
+            visualize_network(nodes, fig)
         
         # 判断邻居关系
         for node in nodes:
@@ -217,7 +218,7 @@ def main(args):
             print(f'Node: {i}\t Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
             data.append([i + 1, total, cnt, rate, end_time, node.p])
             
-    output_data(f'results/temp/{radius}_{exp}.csv')
+    output_data(f'results/temp/{scope}_{exp}.csv')
           
 
 if __name__ == "__main__":

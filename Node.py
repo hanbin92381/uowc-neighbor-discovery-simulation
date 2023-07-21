@@ -238,7 +238,7 @@ class RandomNode(Node):
 class MLENode(Node):
     def __init__(self, x, y, scope, radius, cover, angle_offset, time_offset):
         super().__init__(x, y, scope, radius, cover, angle_offset, time_offset)
-        self.p = int(360.0 / cover)   # 扇区划分
+        self.p = math.ceil(int(360.0 / cover))   # 扇区划分
         self.orientation = (cover / 2 + self.angle_offset) % 360   # 初始朝向
         self.angle_increment = cover   # 角度增量
         self.weights = {i: -10 for i in range(self.p)}   # 选择各扇区的概率权重
