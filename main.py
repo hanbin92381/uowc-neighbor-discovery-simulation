@@ -30,7 +30,8 @@ def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_of
 
     #coordinates = utils.generate_coordinates(num, radius, scope)
     #coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
-    coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
+    #coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
+    coordinates = utils.read_coordinates('6.txt')
 
     extend_P = P * (num // len(P)) + P[:num % len(P)] if len(P) < num else P
         

@@ -29,10 +29,10 @@ def get_args():
 
 def generate_coordinates(num, radius, scope):
     coordinates = []
-    coordinates.append((random.uniform(0, 100), random.uniform(0, 100)))  # 添加第一个坐标
+    coordinates.append((random.uniform(0, 60), random.uniform(0, 60)))  # 添加第一个坐标
     while len(coordinates) < num:
-        x = random.uniform(0, 100)
-        y = random.uniform(0, 100)
+        x = random.uniform(0, 60)
+        y = random.uniform(0, 60)
         for coord in coordinates:
             distance = ((x - coord[0]) ** 2 + (y - coord[1]) ** 2) ** 0.5
             if distance + scope * 2 < radius:
@@ -48,12 +48,12 @@ def generate_coordinates(num, radius, scope):
 
 def generate_continuous_coordinates(radius, scope):
     coordinates = []
-    coordinates.append((random.uniform(0, 100), random.uniform(0, 100)))  # 添加第一个坐标
+    coordinates.append((random.uniform(0, 60), random.uniform(0, 60)))  # 添加第一个坐标
     nums = [10, 20, 30, 40, 50]
     for num in nums:
         while len(coordinates) < num:
-            x = random.uniform(0, 100)
-            y = random.uniform(0, 100)
+            x = random.uniform(0, 60)
+            y = random.uniform(0, 60)
             for coord in coordinates:
                 distance = ((x - coord[0]) ** 2 + (y - coord[1]) ** 2) ** 0.5
                 if distance + scope * 2 < radius:

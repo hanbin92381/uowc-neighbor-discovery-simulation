@@ -14,8 +14,8 @@ def visualize_network(nodes, fig):
     ax.cla()
 
     # 设置坐标轴范围
-    plt.xlim(-10, 110)
-    plt.ylim(-10, 110)
+    plt.xlim(-10, 70)
+    plt.ylim(-10, 70)
 
     # 绘制通信范围圆圈和分割线
     for node in nodes:
