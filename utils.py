@@ -11,10 +11,10 @@ def get_args():
                            help='number of nodes', default=10)
     argparser.add_argument('--inter', type=float,
                            help='visualize interval', default=0)
-    argparser.add_argument('--angle_offset', type=bool,
-                           help='offset of north angle', default=False)
-    argparser.add_argument('--time_offset', type=bool,
-                           help='offset of start time', default=False)
+    argparser.add_argument('--angle_offset', type=int,
+                           help='offset of north angle', default=0)
+    argparser.add_argument('--time_offset', type=int,
+                           help='offset of start time', default=0)
     argparser.add_argument('--scope', type=float,
                            help='movement scope radius', default=5)
     argparser.add_argument('--radius', type=int,

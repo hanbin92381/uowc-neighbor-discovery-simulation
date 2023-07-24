@@ -16,7 +16,7 @@ from typing import List
 data = []   # 存放实验数据
 
 
-def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_offset=False, time_offset=False):
+def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_offset=0, time_offset=0):
     '''
     随机生成num个OurNode：
     1. 节点坐标随机，但保证无孤立节点
@@ -30,14 +30,13 @@ def create_ournodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_of
 
     #coordinates = utils.generate_coordinates(num, radius, scope)
     #coordinates = utils.read_coordinates('temp-' + str(num) + '.txt')
-    #coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
-    coordinates = utils.read_coordinates('6.txt')
+    coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
 
     extend_P = P * (num // len(P)) + P[:num % len(P)] if len(P) < num else P
         
     for i, (x, y) in enumerate(coordinates):
-        offset1 = random.randrange(0, 91, 10) if angle_offset else 0
-        offset2 = random.randrange(0, 10) if time_offset else 0
+        offset1 = random.randrange(0, angle_offset + 1, 10)
+        offset2 = random.randrange(0, time_offset + 1)
         node = OurNode(x, y, scope, radius, cover, offset1, offset2, extend_P[i], P)
         nodes.append(node)
 
@@ -53,8 +52,8 @@ def create_hdndnodes(num=10, P=[3, 5, 7], scope=3, radius=15, cover=120, angle_o
     ids = utils.generate_ids(num, 6)
 
     for (x, y), id in zip(coordinates, ids):
-        offset1 = random.randrange(0, 91, 10) if angle_offset else 0
-        offset2 = random.randrange(0, 10) if time_offset else 0
+        offset1 = random.randrange(0, angle_offset + 1, 10)
+        offset2 = random.randrange(0, time_offset + 1)
         node = HDNDNode(x, y, scope, radius, cover, offset1, offset2, P[0], P[2], id)
         nodes.append(node)
 
@@ -83,8 +82,8 @@ def create_mlenodes(num=10, scope=3, radius=15, cover=120, angle_offset=False, t
     coordinates = utils.read_coordinates('cont-' + str(num) + '.txt')
     
     for x, y in coordinates:
-        offset1 = random.randrange(0, 91, 10) if angle_offset else 0
-        offset2 = random.randrange(0, 10) if time_offset else 0
+        offset1 = random.randrange(0, angle_offset + 1, 10)
+        offset2 = random.randrange(0, time_offset + 1)
         node = MLENode(x, y, scope, radius, cover, offset1, offset2)
         nodes.append(node)
 
@@ -219,7 +218,7 @@ def main(args):
             print(f'Node: {i}\t Total: {total}\t Count: {cnt}\t Rate: {rate:.2f}')
             data.append([i + 1, total, cnt, rate, end_time, node.p])
             
-    output_data(f'results/temp/{scope}_{exp}.csv')
+    output_data(f'results/temp/{num_nodes}_{exp}.csv')
           
 
 if __name__ == "__main__":
